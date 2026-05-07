@@ -4,6 +4,7 @@ from google.oauth2.service_account import Credentials
 import datetime
 import os
 import json
+import traceback
 
 app = Flask(__name__)
 
@@ -46,18 +47,41 @@ DUREES = {
 
 def get_sheet():
     raw = os.environ.get("GOOGLE_CREDENTIALS", "")
-    # Parfois Render double-encode en string JSON
     try:
         creds_dict = json.loads(raw)
         if isinstance(creds_dict, str):
             creds_dict = json.loads(creds_dict)
     except Exception:
-        # Fallback : fichier local
         with open("credentials.json", "r", encoding="utf-8") as f:
             creds_dict = json.load(f)
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     client = gspread.authorize(creds)
     return client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
+
+@app.route("/test")
+def test():
+    """Route de diagnostic — à supprimer après résolution"""
+    result = {}
+    try:
+        raw = os.environ.get("GOOGLE_CREDENTIALS", "")
+        result["creds_present"] = bool(raw)
+        result["creds_length"] = len(raw)
+        result["creds_start"] = raw[:30] if raw else "VIDE"
+        creds_dict = json.loads(raw)
+        if isinstance(creds_dict, str):
+            creds_dict = json.loads(creds_dict)
+        result["creds_type"] = creds_dict.get("type", "?")
+        result["client_email"] = creds_dict.get("client_email", "?")
+        creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
+        client = gspread.authorize(creds)
+        result["gspread_ok"] = True
+        sheet = client.open_by_key(SPREADSHEET_ID).worksheet(SHEET_NAME)
+        result["sheet_ok"] = True
+        result["sheet_title"] = sheet.title
+    except Exception as e:
+        result["error"] = str(e)
+        result["traceback"] = traceback.format_exc()
+    return jsonify(result)
 
 @app.route("/")
 def index():
@@ -105,6 +129,7 @@ def submit():
         return jsonify({"ok": True})
 
     except Exception as e:
+        traceback.print_exc()
         return jsonify({"ok": False, "error": str(e)}), 500
 
 if __name__ == "__main__":
