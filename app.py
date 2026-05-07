@@ -45,11 +45,15 @@ DUREES = {
 }
 
 def get_sheet():
-    creds_json = os.environ.get("GOOGLE_CREDENTIALS")
-    if creds_json:
-        creds_dict = json.loads(creds_json)
-    else:
-        with open("credentials.json", "r") as f:
+    raw = os.environ.get("GOOGLE_CREDENTIALS", "")
+    # Parfois Render double-encode en string JSON
+    try:
+        creds_dict = json.loads(raw)
+        if isinstance(creds_dict, str):
+            creds_dict = json.loads(creds_dict)
+    except Exception:
+        # Fallback : fichier local
+        with open("credentials.json", "r", encoding="utf-8") as f:
             creds_dict = json.load(f)
     creds = Credentials.from_service_account_info(creds_dict, scopes=SCOPES)
     client = gspread.authorize(creds)
@@ -68,14 +72,13 @@ def index():
 def submit():
     try:
         data = request.json
-        date_str = data.get("date", "")
-        agent    = data.get("agent", "").strip()
-        theme    = data.get("theme", "").strip()
-        tache    = data.get("tache", "").strip()
-        garde    = data.get("garde", "En garde")
+        date_str  = data.get("date", "")
+        agent     = data.get("agent", "").strip()
+        theme     = data.get("theme", "").strip()
+        tache     = data.get("tache", "").strip()
+        garde     = data.get("garde", "En garde")
         duree_lbl = data.get("duree", "30 min")
 
-        # Validation
         errors = []
         if not date_str:
             errors.append("Date manquante")
@@ -88,10 +91,10 @@ def submit():
         if errors:
             return jsonify({"ok": False, "error": ", ".join(errors)}), 400
 
-        dt = datetime.datetime.strptime(date_str, "%Y-%m-%d")
+        dt      = datetime.datetime.strptime(date_str, "%Y-%m-%d")
         date_fr = dt.strftime("%d/%m/%Y")
-        mois = dt.month
-        annee = dt.year
+        mois    = dt.month
+        annee   = dt.year
         duree_h = DUREES.get(duree_lbl, 0.5)
 
         sheet = get_sheet()
@@ -99,7 +102,6 @@ def submit():
             [date_fr, mois, annee, agent, theme, tache, garde, duree_h],
             value_input_option="USER_ENTERED"
         )
-
         return jsonify({"ok": True})
 
     except Exception as e:
