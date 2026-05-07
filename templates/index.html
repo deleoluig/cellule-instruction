@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Cellule Instruction">
+<title>Cellule Instruction — Saisie</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background: #F0F2F5;
+    min-height: 100vh;
+    padding-bottom: 40px;
+  }
+
+  header {
+    background: #1A3A5C;
+    color: #E8F0FA;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  header h1 { font-size: 16px; font-weight: 600; }
+  header span { font-size: 20px; }
+
+  .card {
+    background: #fff;
+    border-radius: 16px;
+    padding: 20px;
+    margin: 16px;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .field { margin-bottom: 16px; }
+  .field label {
+    display: block;
+    font-size: 11px;
+    font-weight: 700;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+
+  .field select,
+  .field input[type="date"],
+  .field input[type="text"] {
+    width: 100%;
+    padding: 12px 14px;
+    font-size: 16px;
+    border: 1.5px solid #E0E0E0;
+    border-radius: 10px;
+    background: #FAFAFA;
+    color: #1a1a1a;
+    appearance: none;
+    -webkit-appearance: none;
+    outline: none;
+    transition: border-color .2s;
+  }
+  .field select:focus,
+  .field input:focus {
+    border-color: #1A3A5C;
+    background: #fff;
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .garde-group { display: flex; gap: 10px; }
+  .garde-btn {
+    flex: 1;
+    padding: 11px 8px;
+    border-radius: 10px;
+    border: 1.5px solid #E0E0E0;
+    background: #FAFAFA;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    text-align: center;
+    transition: all .2s;
+    color: #888;
+  }
+  .garde-btn.active-garde {
+    background: #E1F5EE;
+    border-color: #1D9E75;
+    color: #085041;
+  }
+  .garde-btn.active-hors {
+    background: #FAEEDA;
+    border-color: #BA7517;
+    color: #633806;
+  }
+
+  .btn-today {
+    margin-top: 6px;
+    padding: 6px 14px;
+    background: #E6F1FB;
+    color: #1A3A5C;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .btn-submit {
+    width: 100%;
+    padding: 16px;
+    background: #1A3A5C;
+    color: #fff;
+    border: none;
+    border-radius: 14px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: background .2s, transform .1s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-submit:active { transform: scale(0.98); }
+  .btn-submit.success { background: #1D9E75; }
+  .btn-submit.error   { background: #D85A30; }
+  .btn-submit:disabled { opacity: 0.7; cursor: not-allowed; }
+
+  .btn-reset {
+    width: 100%;
+    padding: 12px;
+    background: #F0F2F5;
+    color: #888;
+    border: none;
+    border-radius: 14px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-top: 10px;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: #1D9E75;
+    color: #fff;
+    padding: 12px 24px;
+    border-radius: 99px;
+    font-size: 15px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.2);
+    transition: transform .3s ease;
+    white-space: nowrap;
+    z-index: 100;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.err  { background: #D85A30; }
+
+  .section-title {
+    font-size: 12px;
+    font-weight: 700;
+    color: #1A3A5C;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 14px;
+    padding-bottom: 8px;
+    border-bottom: 2px solid #E6F1FB;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <span>🔥</span>
+  <h1>Cellule Instruction — Saisie rapide</h1>
+</header>
+
+<form id="mainForm" autocomplete="off">
+
+  <div class="card">
+    <div class="section-title">Informations générales</div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="date" value="{{ today }}" required>
+        <button type="button" class="btn-today" onclick="setToday()">📅 Aujourd'hui</button>
+      </div>
+      <div class="field">
+        <label>Agent</label>
+        <select id="agent" required>
+          <option value="">— Choisir —</option>
+          {% for a in agents %}
+          <option value="{{ a }}">{{ a }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Thème</label>
+      <select id="theme" required>
+        <option value="">— Choisir un thème —</option>
+        {% for t in themes %}
+        <option value="{{ t }}">{{ t }}</option>
+        {% endfor %}
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Tâche effectuée</label>
+      <input type="text" id="tache" placeholder="Décrivez la tâche…" required>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="section-title">Durée et statut</div>
+
+    <div class="row2">
+      <div class="field">
+        <label>Statut de garde</label>
+        <div class="garde-group">
+          <div class="garde-btn active-garde" id="btn-garde" onclick="setGarde('En garde')">En garde</div>
+          <div class="garde-btn" id="btn-hors" onclick="setGarde('Hors Garde')">Hors garde</div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Durée</label>
+        <select id="duree">
+          {% for d in durees %}
+          <option value="{{ d }}" {% if d == "30 min" %}selected{% endif %}>{{ d }}</option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin: 0 16px;">
+    <button type="submit" class="btn-submit" id="submitBtn">
+      <span id="btnIcon">✔</span>
+      <span id="btnText">Enregistrer dans Google Sheets</span>
+    </button>
+    <button type="button" class="btn-reset" onclick="resetForm()">✖ Effacer</button>
+  </div>
+
+</form>
+
+<div class="toast" id="toast"></div>
+
+<script>
+  let gardeVal = "En garde";
+
+  function setGarde(val) {
+    gardeVal = val;
+    document.getElementById("btn-garde").className = "garde-btn" + (val === "En garde" ? " active-garde" : "");
+    document.getElementById("btn-hors").className  = "garde-btn" + (val === "Hors Garde" ? " active-hors" : "");
+  }
+
+  function setToday() {
+    const today = new Date();
+    const yyyy = today.getFullYear();
+    const mm   = String(today.getMonth()+1).padStart(2,"0");
+    const dd   = String(today.getDate()).padStart(2,"0");
+    document.getElementById("date").value = `${yyyy}-${mm}-${dd}`;
+  }
+
+  function showToast(msg, isErr) {
+    const t = document.getElementById("toast");
+    t.textContent = msg;
+    t.className = "toast" + (isErr ? " err" : "") + " show";
+    setTimeout(() => t.className = "toast" + (isErr ? " err" : ""), 3000);
+  }
+
+  function resetForm() {
+    document.getElementById("agent").value = "";
+    document.getElementById("theme").value = "";
+    document.getElementById("tache").value = "";
+    document.getElementById("duree").value = "30 min";
+    setToday();
+    setGarde("En garde");
+  }
+
+  document.getElementById("mainForm").addEventListener("submit", async function(e) {
+    e.preventDefault();
+    const btn  = document.getElementById("submitBtn");
+    const icon = document.getElementById("btnIcon");
+    const txt  = document.getElementById("btnText");
+
+    btn.disabled = true;
+    icon.textContent = "⏳";
+    txt.textContent  = "Enregistrement…";
+
+    const payload = {
+      date:  document.getElementById("date").value,
+      agent: document.getElementById("agent").value,
+      theme: document.getElementById("theme").value,
+      tache: document.getElementById("tache").value,
+      garde: gardeVal,
+      duree: document.getElementById("duree").value,
+    };
+
+    try {
+      const resp = await fetch("/submit", {
+        method: "POST",
+        headers: {"Content-Type": "application/json"},
+        body: JSON.stringify(payload),
+      });
+      const data = await resp.json();
+
+      if (data.ok) {
+        btn.className = "btn-submit success";
+        icon.textContent = "✔";
+        txt.textContent  = "Enregistré !";
+        showToast("✔ Ligne ajoutée avec succès", false);
+        setTimeout(() => {
+          btn.className = "btn-submit";
+          icon.textContent = "✔";
+          txt.textContent  = "Enregistrer dans Google Sheets";
+          btn.disabled = false;
+          resetForm();
+        }, 1800);
+      } else {
+        throw new Error(data.error || "Erreur inconnue");
+      }
+    } catch(err) {
+      btn.className = "btn-submit error";
+      icon.textContent = "✖";
+      txt.textContent  = "Erreur — réessayer";
+      showToast("✖ " + err.message, true);
+      setTimeout(() => {
+        btn.className = "btn-submit";
+        icon.textContent = "✔";
+        txt.textContent  = "Enregistrer dans Google Sheets";
+        btn.disabled = false;
+      }, 2500);
+    }
+  });
+</script>
+</body>
+</html>
