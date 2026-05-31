@@ -31,10 +31,6 @@ THEMES = [
 ]
 
 DUREES = {
-    "5 min":  round(5/60, 3),
-    "10 min": round(10/60, 3),
-    "15 min": round(15/60, 3),
-    "20 min": round(20/60, 3),
     "30 min": round(30/60, 3),
     "45 min": round(45/60, 3),
     "1h":     1.0,
